@@ -1,0 +1,12 @@
+{
+    "plugin_name": "My Plugin",
+    "project_slug": "{{ cookiecutter.plugin_name|lower|replace(' ', '-')|replace('_', '-') }}",
+    "plugin_namespace": "dev.example",
+    "plugin_id": "{{ cookiecutter.plugin_namespace }}.{{ cookiecutter.project_slug }}",
+    "description": "An Agent of Empires plugin.",
+    "author_name": "Your Name",
+    "version": "0.1.0",
+    "runtime": ["python", "node", "rust"],
+    "aoe_api_version": "6",
+    "aoe_version": ">=1.11.0, <2.0.0"
+}

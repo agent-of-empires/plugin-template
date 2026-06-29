@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit configuration. Comment-only, pre-merge gates at `warning`. Linters
+# that CI already runs (ruff/mypy, eslint, clippy) are left to CI to avoid
+# duplicate signal; CodeRabbit runs only the checks CI does not cover.
+
+language: en-US
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  review_status: true
+  collapse_walkthrough: false
+  changed_files_summary: true
+  poem: false
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    base_branches: ["main"]
+
+  pre_merge_checks:
+    title:
+      mode: warning
+      requirements: |
+        PR titles should start with a Conventional Commit prefix: `feat:`, `fix:`,
+        `docs:`, `refactor:`, `chore:`, `test:`, `perf:`, `ci:`, `build:`,
+        `style:`, `security:`, or `revert:`. Use imperative mood, lowercase
+        subject, under ~70 chars.
+    description:
+      mode: warning
+
+  tools:
+    # Things CI does not cover and are cheap to surface inline.
+    gitleaks:
+      enabled: true
+    markdownlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    actionlint:
+      enabled: true
+
+chat:
+  auto_reply: true

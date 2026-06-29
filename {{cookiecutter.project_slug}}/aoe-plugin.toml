@@ -1,0 +1,94 @@
+# {{ cookiecutter.plugin_name }} -- an Agent of Empires plugin.
+#
+# Manifest schema: aoe-plugin-api/src/manifest.rs in agent-of-empires. The host
+# parses this strictly (deny_unknown_fields), so every key must match a field in
+# that schema. Field-by-field reference:
+# https://agent-of-empires.com/docs/api/plugin-api/
+
+id = "{{ cookiecutter.plugin_id }}"
+name = "{{ cookiecutter.plugin_name }}"
+version = "{{ cookiecutter.version }}"
+# Manifest schema / host API version. The host rejects a manifest whose
+# api_version it does not support.
+api_version = {{ cookiecutter.aoe_api_version }}
+# Host-app compatibility range (a different axis from api_version). The host
+# refuses install/update outside this range. Requires api_version >= 4.
+aoe_version = "{{ cookiecutter.aoe_version }}"
+description = "{{ cookiecutter.description }}"
+
+# Capability grants are prompted at install and pinned to the manifest hash.
+# Declare only what the worker actually uses. `runtime.worker` is required to run
+# any plugin code at all. Add more (net, session.read, notifications, ...) as the
+# worker grows; see the capability table in the plugin API reference.
+capabilities = ["runtime.worker"]
+
+# Commands the plugin contributes (palette / CLI), namespaced by the host as
+# plugin.{{ cookiecutter.plugin_id }}.<id>. The command-id -> worker RPC mapping
+# is host convention; the worker answers a method ending in `.status`.
+[[commands]]
+id = "status"
+title = "{{ cookiecutter.plugin_name }}: status"
+description = "Show the {{ cookiecutter.plugin_name }} status summary."
+
+# A setting, rendered on the TUI and web settings surfaces and stored under
+# [plugins."{{ cookiecutter.plugin_id }}".settings]. The worker reads it back at
+# runtime via the config.get host RPC.
+[[settings]]
+key = "enabled"
+label = "Enable {{ cookiecutter.plugin_name }}"
+description = "Master toggle for the plugin's behavior."
+type = "boolean"
+default = true
+
+# A UI extension point. The host renders the slot; the worker pushes display
+# state through the ui.state.set host RPC. `pane` is a dockable tool-window in a
+# session's view.
+[[ui]]
+slot = "pane"
+id = "{{ cookiecutter.project_slug|replace('-', '_') }}_pane"
+
+# Tier 1 worker: the executable the host spawns and supervises, speaking ndjson
+# JSON-RPC over stdio. The entrypoint MUST be plugin-relative so the daemon's
+# PATH never decides whether the worker launches. The build steps run in the
+# user's interactive shell at install/update, where PATH is reliable. They build
+# into .aoe-build/ (the host's BUILD_OUTPUT_DIR), which the host excludes from
+# the plugin tree hash. Scoped to posix.
+{% if cookiecutter.runtime == "python" -%}
+[runtime]
+kind = "command"
+command = [".aoe-build/venv/bin/{{ cookiecutter.project_slug }}-worker"]
+
+[[runtime.build]]
+command = ["python3", "-m", "venv", ".aoe-build/venv"]
+platforms = ["linux", "macos"]
+
+[[runtime.build]]
+command = [".aoe-build/venv/bin/pip", "install", "."]
+platforms = ["linux", "macos"]
+{% elif cookiecutter.runtime == "node" -%}
+[runtime]
+kind = "command"
+command = [".aoe-build/node/bin/{{ cookiecutter.project_slug }}-worker"]
+
+[[runtime.build]]
+command = ["npm", "install"]
+platforms = ["linux", "macos"]
+
+[[runtime.build]]
+command = ["npm", "run", "build"]
+platforms = ["linux", "macos"]
+
+# Generate a plugin-relative launcher under .aoe-build/node/bin that pins the
+# build-time node binary, so runtime launch never depends on the daemon PATH.
+[[runtime.build]]
+command = ["node", "scripts/write-aoe-wrapper.mjs"]
+platforms = ["linux", "macos"]
+{% elif cookiecutter.runtime == "rust" -%}
+[runtime]
+kind = "command"
+command = [".aoe-build/cargo-target/release/{{ cookiecutter.project_slug }}-worker"]
+
+[[runtime.build]]
+command = ["cargo", "build", "--release", "--target-dir", ".aoe-build/cargo-target"]
+platforms = ["linux", "macos"]
+{% endif -%}

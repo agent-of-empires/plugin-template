@@ -1,0 +1,16 @@
+# Agent of Empires build output. The host builds the worker in here and excludes
+# it from the plugin tree hash. Never commit it.
+.aoe-build/
+
+# OS / editor noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# The runtime-specific ignore rules are appended below by the template's
+# post-generation hook.

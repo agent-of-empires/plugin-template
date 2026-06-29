@@ -1,0 +1,13 @@
+[package]
+name = "{{ cookiecutter.project_slug }}"
+version = "{{ cookiecutter.version }}"
+edition = "2021"
+license = "MIT"
+description = "{{ cookiecutter.description }}"
+
+[[bin]]
+name = "{{ cookiecutter.project_slug }}-worker"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = "1"

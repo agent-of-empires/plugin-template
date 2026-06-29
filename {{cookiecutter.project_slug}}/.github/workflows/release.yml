@@ -1,0 +1,52 @@
+name: Release
+
+# Tag vX.Y.Z to publish a GitHub Release with a source archive and its sha256.
+# Agent of Empires can install the plugin from the archive (or from source).
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+{% if cookiecutter.runtime == "python" %}
+      - uses: astral-sh/setup-uv@v8
+        with:
+          version: "latest"
+      - run: uv python install 3.10
+      - run: uv sync
+      - run: uv run ruff check . && uv run mypy src && uv run pytest
+{% elif cookiecutter.runtime == "node" %}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install
+      - run: npm run lint && npm run build && npm test
+{% elif cookiecutter.runtime == "rust" %}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - run: cargo clippy --all-targets -- -D warnings && cargo test && cargo build --release
+{% endif %}
+      - name: Build source archive
+        run: |
+          TAG={% raw %}${{ github.ref_name }}{% endraw %}
+          NAME={{ cookiecutter.project_slug }}-${TAG}
+          git archive --format=tar.gz --prefix="${NAME}/" -o "${NAME}.tar.gz" HEAD
+          sha256sum "${NAME}.tar.gz" > "${NAME}.tar.gz.sha256"
+      - name: Publish release
+        env:
+          GH_TOKEN: {% raw %}${{ github.token }}{% endraw %}
+        run: |
+          TAG={% raw %}${{ github.ref_name }}{% endraw %}
+          NAME={{ cookiecutter.project_slug }}-${TAG}
+          gh release create "${TAG}" \
+            --title "${TAG}" \
+            --generate-notes \
+            "${NAME}.tar.gz" "${NAME}.tar.gz.sha256"
