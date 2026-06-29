@@ -10,19 +10,20 @@ on:
     branches: [main]
   pull_request:
 
-env:
-  GEN_DIR: ${{ runner.temp }}/out/ci-demo
-
 jobs:
   generate:
     name: Generate and build (${{ matrix.runtime }})
     runs-on: ubuntu-latest
+    env:
+      GEN_DIR: ${{ runner.temp }}/out/ci-demo
     strategy:
       fail-fast: false
       matrix:
         runtime: [python, node, rust]
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@v5
         with:
