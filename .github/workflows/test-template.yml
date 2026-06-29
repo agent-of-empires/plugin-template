@@ -1,0 +1,90 @@
+name: Test template
+
+# Generates the template for every runtime and builds + tests each generated
+# project. Python is modeled on a production plugin; Node and Rust have no
+# reference plugin, so this matrix is what proves they actually work. Keep it
+# green on every PR.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  generate:
+    name: Generate and build (${{ matrix.runtime }})
+    runs-on: ubuntu-latest
+    env:
+      GEN_DIR: ${{ runner.temp }}/out/ci-demo
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [python, node, rust]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate project
+        run: |
+          pip install cookiecutter
+          cookiecutter . --no-input -o "${{ runner.temp }}/out" \
+            runtime=${{ matrix.runtime }} plugin_name="CI Demo"
+
+      - name: Validate manifest parses
+        working-directory: ${{ env.GEN_DIR }}
+        run: |
+          python3 - <<'PY'
+          import tomllib
+          with open("aoe-plugin.toml", "rb") as f:
+              tomllib.load(f)
+          print("aoe-plugin.toml parses as TOML")
+          PY
+
+      # --- Python ---
+      - uses: astral-sh/setup-uv@v8
+        if: matrix.runtime == 'python'
+        with:
+          version: "latest"
+      - name: Python build and test
+        if: matrix.runtime == 'python'
+        working-directory: ${{ env.GEN_DIR }}
+        run: |
+          uv python install 3.10
+          uv sync
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run mypy src
+          uv run pytest
+
+      # --- Node ---
+      - uses: actions/setup-node@v4
+        if: matrix.runtime == 'node'
+        with:
+          node-version: "22"
+      - name: Node build and test
+        if: matrix.runtime == 'node'
+        working-directory: ${{ env.GEN_DIR }}
+        run: |
+          npm install
+          npm run lint
+          npm run build
+          npm test
+
+      # --- Rust ---
+      - uses: dtolnay/rust-toolchain@stable
+        if: matrix.runtime == 'rust'
+        with:
+          components: clippy, rustfmt
+      - name: Rust build and test
+        if: matrix.runtime == 'rust'
+        working-directory: ${{ env.GEN_DIR }}
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
+          cargo build --release

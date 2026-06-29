@@ -1,0 +1,40 @@
+name: PR Title Check
+
+# Enforce Conventional Commits on the PR title. Squash-merge makes the title the
+# commit subject git-cliff consumes for CHANGELOG.md. Mirrors the AoE core check.
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  lint:
+    name: Lint PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
+        with:
+          # Keep in sync with cliff.toml commit_parsers.
+          types: |
+            feat
+            fix
+            perf
+            security
+            revert
+            chore
+            build
+            ci
+            docs
+            style
+            refactor
+            test
+          requireScope: false
+          subjectPattern: ^[^A-Z].+$
+          subjectPatternError: |
+            The subject "{% raw %}{subject}{% endraw %}" in the PR title should start
+            with a lowercase character (Conventional Commits style).
