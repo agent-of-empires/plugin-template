@@ -30,6 +30,8 @@ def process_line(line: str) -> dict[str, Any] | None:
         request = json.loads(line)
     except json.JSONDecodeError:
         return None
+    if not isinstance(request, dict):
+        return None  # not a JSON-RPC object: ignore
     msg_id = request.get("id")
     if msg_id is None:
         return None  # a notification: no response

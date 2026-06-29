@@ -21,7 +21,7 @@ def result_response(msg_id: Any, result: Any) -> dict[str, Any]:
 
 
 def error_response(msg_id: Any, exc: BaseException) -> dict[str, Any]:
-    if isinstance(exc, LookupError):
+    if isinstance(exc, MethodNotFoundError):
         return {
             "jsonrpc": "2.0",
             "id": msg_id,
