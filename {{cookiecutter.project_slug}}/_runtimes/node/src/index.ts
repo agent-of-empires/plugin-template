@@ -21,18 +21,26 @@ export function handle(method: string, _params: Record<string, unknown>): Record
 }
 
 export function processLine(line: string): RpcResponse | null {
-  let request: Record<string, unknown>;
+  let request: unknown;
   try {
-    request = JSON.parse(line) as Record<string, unknown>;
+    request = JSON.parse(line);
   } catch {
     return null;
   }
-  const id = request.id;
+  if (request === null || typeof request !== "object" || Array.isArray(request)) {
+    return null; // not a JSON-RPC object: ignore
+  }
+  const message = request as Record<string, unknown>;
+  const id = message.id;
   if (id === undefined || id === null) {
     return null; // a notification: no response
   }
   try {
-    const result = handle(String(request.method ?? ""), (request.params as Record<string, unknown>) ?? {});
+    const params = message.params;
+    const result = handle(
+      String(message.method ?? ""),
+      params !== null && typeof params === "object" && !Array.isArray(params) ? (params as Record<string, unknown>) : {},
+    );
     return resultResponse(id, result);
   } catch (err) {
     return errorResponse(id, err);
