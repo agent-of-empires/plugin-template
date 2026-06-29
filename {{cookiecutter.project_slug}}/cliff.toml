@@ -30,7 +30,7 @@ footer = ""
 conventional_commits = true
 filter_unconventional = false
 filter_commits = true
-tag_pattern = "v[0-9]*"
+tag_pattern = "v[0-9].*"
 sort_commits = "oldest"
 protect_breaking_commits = true
 
