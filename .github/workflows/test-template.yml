@@ -14,13 +14,15 @@ jobs:
   generate:
     name: Generate and build (${{ matrix.runtime }})
     runs-on: ubuntu-latest
-    env:
-      GEN_DIR: ${{ runner.temp }}/out/ci-demo
     strategy:
       fail-fast: false
       matrix:
         runtime: [python, node, rust]
     steps:
+      # `runner` context is not available in job-level env, so set it here.
+      - name: Set GEN_DIR
+        run: echo "GEN_DIR=$RUNNER_TEMP/out/ci-demo" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
